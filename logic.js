@@ -18,59 +18,82 @@ firebase.initializeApp(config);
 // Create a variable to reference the database.
 var database = firebase.database();
 
-var employeeName = "";
-var role = "";
-var startDate = "";
-var monthlyRate = 0;
+var name = "";
+var destination = "";
+var firstTrain = "";
+var frequency = 0;
 
-$("#submit-employee").on("click", function (event) {
+$("#submit-train").on("click", function (event) {
     event.preventDefault();
 
-    employeeName = $("#name").val().trim();
-    role = $("#role").val().trim();
-    startDate = $("#start").val().trim();
-    monthlyRate = $("#rate").val().trim();
+    name = $("#name").val().trim();
+    destination = $("#destination").val().trim();
+    firstTrain = $("#firstTrain").val().trim();
+    frequency = $("#frequency").val().trim();
 
-    database.ref().push({
-        employeeName: employeeName,
-        role: role,
-        startDate: startDate,
-        monthlyRate: monthlyRate,
-
+    var newTrain = {
+        name: name,
+        destination: destination,
+        firstTrain: firstTrain,
+        frequency: frequency 
     }
-    )
+
+    database.ref().push(newTrain);
+
+    $("#name").val("");
+    $("#destination").val("");
+    $("#firstTrain").val("");
+    $("#frequency").val("");
+
 });
 
-database.ref().on("child_added", function (childSnapshot) {
+database.ref().on("child_added", function (snapshot) {
 
-    // Log everything that's coming out of snapshot
-    console.log("start snapshot");
-    console.log(childSnapshot.val().employeeName);
-    console.log(childSnapshot.val().role);
-    console.log(childSnapshot.val().startDate);
-    console.log(childSnapshot.val().monthlyRate);
+
+
+    var tname = snapshot.val().name;
+    var des = snapshot.val().destination;
+    var first = snapshot.val().firstTrain;
+    var freq = snapshot.val().frequency;
+
+    // First Time (pushed back 1 year to make sure it comes before current time)
+    var firstTimeConverted = moment(first, "HH:mm").subtract(1, "years");
+    console.log(firstTimeConverted);
+
+    // Current Time
+    var currentTime = moment();
+    console.log("CURRENT TIME: " + moment(currentTime).format("hh:mm"));
+
+    // Difference between the times
+    var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
+    console.log("DIFFERENCE IN TIME: " + diffTime);
+
+    // Time apart (remainder)
+    var tRemainder = diffTime % freq;
+    console.log(tRemainder);
+
+    // Minute Until Train
+    var min = freq - tRemainder;
+    console.log("MINUTES TILL TRAIN: " + min);
+
+    // Next Train
+    var next = moment().add(min, "minutes");
+    console.log("ARRIVAL TIME: " + moment(next).format("hh:mm"));
 
     var tableRow = $("<tr>");
     var nameData = $("<td>");
-    var roleData = $("<td>");
-    var startData = $("<td>");
-    var monthsWorkedData = $("<td>");
-    var rateData = $("<td>");
-    var totalBilledData = $("<td>");
-    nameData.text(childSnapshot.val().employeeName)
-    roleData.text(childSnapshot.val().role)
-    startData.text(childSnapshot.val().startDate)
-    monthsWorkedData.text("123");
-    rateData.text(childSnapshot.val().monthlyRate)
-    totalBilledData.text("123");
-    tableRow.append(nameData, roleData, startData, monthsWorkedData, rateData, totalBilledData);
+    var destinationData = $("<td>");
+    var firstTrainData = $("<td>");
+    var frequencyData = $("<td>");
+    var nextArrivalData = $("<td>");
+    var minutesAwayData = $("<td>");
+    nameData.text(tname)
+    destinationData.text(des)
+    firstTrainData.text(first)
+    nextArrivalData.text(moment(next).format("hh:mm a"));
+    minutesAwayData.text(min);
+    frequencyData.text(freq);
+    tableRow.append(nameData, destinationData, frequencyData, nextArrivalData, minutesAwayData);
     $("tbody").append(tableRow);
 })
 
-    // full list of items to the well
-    // $("tbody").append("<div class='well'><span class='member-name'> " +
-    //   childSnapshot.val().name +
-    //   " </span><span class='member-email'> " + childSnapshot.val().email +
-    //   " </span><span class='member-age'> " + childSnapshot.val().age +
-    //   " </span><span class='member-comment'> " + childSnapshot.val().comment +
-    //   " </span></div>");
